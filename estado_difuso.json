@@ -1,0 +1,74 @@
+{
+  "fuzzificacion": {
+    "Distancia": {
+      "valor": 0,
+      "unidad": "u",
+      "conjuntos": {
+        "Cerca": 1.0,
+        "Media": 0.0,
+        "Lejos": 0.0
+      }
+    },
+    "Vida_NPC": {
+      "valor": 16,
+      "unidad": "%",
+      "conjuntos": {
+        "Baja": 1.0,
+        "Media": 0.0,
+        "Alta": 0.0
+      }
+    },
+    "Vida_Jugador": {
+      "valor": 15,
+      "unidad": "%",
+      "conjuntos": {
+        "Baja": 1.0,
+        "Media": 0.0,
+        "Alta": 0.0
+      }
+    }
+  },
+  "reglas_activadas": [
+    {
+      "indice": 8,
+      "antecedentes": [
+        {
+          "variable": "Distancia",
+          "conjunto": "Cerca",
+          "negado": false,
+          "valor_membresia": 1.0
+        },
+        {
+          "variable": "Vida_NPC",
+          "conjunto": "Baja",
+          "negado": false,
+          "valor_membresia": 1.0
+        },
+        {
+          "variable": "Vida_Jugador",
+          "conjunto": "Baja",
+          "negado": false,
+          "valor_membresia": 1.0
+        }
+      ],
+      "operador": "AND",
+      "firing_strength": 1.0,
+      "consecuentes": {
+        "Accion": "Atacar"
+      }
+    }
+  ],
+  "agregacion": {
+    "Accion": {
+      "conjuntos": {
+        "Alejarse": 0.0,
+        "Defender": 0.0,
+        "Acercarse": 0.0,
+        "Atacar": 1.0
+      }
+    }
+  },
+  "valor_salida": {
+    "Accion": 84.013
+  }
+}

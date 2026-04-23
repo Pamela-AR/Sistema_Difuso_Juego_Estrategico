@@ -29,6 +29,18 @@ class BattleRequestHandler(BaseHTTPRequestHandler):
             )
             return
 
+        if parsed.path == "/api/procesamiento":
+            # Retorna datos de ejemplo del procesamiento difuso
+            try:
+                import json
+                with open("estado_difuso.json", "r") as f:
+                    datos = json.load(f)
+                    self._send_json(datos)
+                    return
+            except (FileNotFoundError, json.JSONDecodeError):
+                self._send_json({"error": "No hay datos de procesamiento disponibles"}, status=HTTPStatus.NOT_FOUND)
+                return
+
         if parsed.path == "/" or parsed.path == "":
             self._serve_file("index.html")
             return

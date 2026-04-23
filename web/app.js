@@ -13,6 +13,9 @@ const elements = {
   playerEffect: document.getElementById("playerEffect"),
   restartButton: document.getElementById("restartButton"),
   actionButtons: Array.from(document.querySelectorAll("[data-action]")),
+  fuzzyLog: document.getElementById("fuzzyLog"),
+  fuzzyContent: document.getElementById("fuzzyContent"),
+  toggleFuzzy: document.getElementById("toggleFuzzy"),
 };
 
 const spriteSets = {
@@ -154,6 +157,99 @@ function renderLog(entries) {
   }
 }
 
+function renderFuzzyProcessing(data) {
+  if (!data) {
+    elements.fuzzyLog.innerHTML = '<p class="fuzzy-placeholder">Los datos del procesamiento difuso aparecerán aquí...</p>';
+    return;
+  }
+
+  let html = '';
+
+  // Sección de Fuzzificación
+  if (data.fuzzificacion) {
+    html += '<div class="fuzzy-section">';
+    html += '<div class="fuzzy-section-title">📊 Fuzzificación (Entrada)</div>';
+
+    for (const [varName, varData] of Object.entries(data.fuzzificacion)) {
+      html += '<div style="margin: 6px 0; padding: 6px; background: rgba(0,0,0,0.15); border-radius: 2px;">';
+      html += `<div style="color: #6dd3d0; font-weight: bold; margin-bottom: 3px;">${varName}</div>`;
+      html += `<div class="fuzzy-entry"><span class="fuzzy-label">Valor:</span><span class="fuzzy-value">${varData.valor} ${varData.unidad}</span></div>`;
+
+      html += '<div style="margin-top: 4px; padding: 4px; background: rgba(0,0,0,0.2); border-radius: 2px;">';
+      for (const [conjunto, grado] of Object.entries(varData.conjuntos)) {
+        const barWidth = Math.round(grado * 100);
+        const bar = grado > 0 ? '▓'.repeat(Math.max(1, Math.floor(grado * 10))) : '░';
+        html += `<div class="fuzzy-entry" style="font-size: 0.75rem;"><span class="fuzzy-label">${conjunto}:</span><span class="fuzzy-value">${grado.toFixed(3)}</span></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Sección de Reglas Activadas
+  if (data.reglas_activadas && data.reglas_activadas.length > 0) {
+    html += '<div class="fuzzy-section" style="margin-top: 8px;">';
+    html += `<div class="fuzzy-section-title">⚡ Reglas Activadas (${data.reglas_activadas.length})</div>`;
+
+    for (const rule of data.reglas_activadas) {
+      const fsPercent = Math.round(rule.firing_strength * 100);
+      html += '<div class="fuzzy-rule">';
+      html += `<div class="fuzzy-rule-header">Regla ${rule.indice} | Fuerza: ${rule.firing_strength.toFixed(3)} (${fsPercent}%)</div>`;
+      html += '<div class="fuzzy-rule-content">';
+      html += '<div style="margin-bottom: 3px;"><strong>Si:</strong></div>';
+
+      for (const ant of rule.antecedentes) {
+        const negText = ant.negado ? ' NO ' : '';
+        html += `<div style="margin-left: 8px; font-size: 0.7rem;">${ant.variable}${negText}es ${ant.conjunto} (μ=${ant.valor_membresia})</div>`;
+      }
+
+      html += `<div style="margin: 3px 0;"><strong>Entonces:</strong> ${rule.operador}</div>`;
+      for (const [outVar, conjunto] of Object.entries(rule.consecuentes)) {
+        html += `<div style="margin-left: 8px; font-size: 0.7rem;">${outVar} es ${conjunto}</div>`;
+      }
+
+      html += '</div>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Sección de Agregación
+  if (data.agregacion) {
+    html += '<div class="fuzzy-section" style="margin-top: 8px;">';
+    html += '<div class="fuzzy-section-title">🎯 Agregación (Salida)</div>';
+
+    for (const [varName, varData] of Object.entries(data.agregacion)) {
+      html += `<div style="margin: 4px 0;"><div style="color: #4ec9b0; font-size: 0.75rem; font-weight: bold;">${varName}</div>`;
+      for (const [conjunto, alpha] of Object.entries(varData.conjuntos)) {
+        const barWidth = Math.round(alpha * 100);
+        const bar = alpha > 0 ? '█'.repeat(Math.max(1, Math.floor(alpha * 12))) : '░';
+        html += `<div class="fuzzy-entry" style="font-size: 0.7rem;"><span class="fuzzy-label">${conjunto}:</span><span class="fuzzy-value">${bar} ${alpha.toFixed(3)}</span></div>`;
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Sección de Valor de Salida
+  if (data.valor_salida) {
+    html += '<div class="fuzzy-section" style="margin-top: 8px;">';
+    html += '<div class="fuzzy-section-title">✓ Centroide (Salida Crisp)</div>';
+
+    for (const [varName, valor] of Object.entries(data.valor_salida)) {
+      html += `<div class="fuzzy-entry" style="margin: 4px 0;"><span class="fuzzy-label">${varName}:</span><span class="fuzzy-value">${valor.toFixed(3)}</span></div>`;
+    }
+
+    html += '</div>';
+  }
+
+  elements.fuzzyLog.innerHTML = html;
+}
+
 function hpColor(value) {
   if (value <= 25) return "linear-gradient(90deg, #f07171 0%, #cb3f54 100%)";
   if (value <= 50) return "linear-gradient(90deg, #ffd56e 0%, #d89c39 100%)";
@@ -279,6 +375,7 @@ async function playTurn(action) {
   const payload = await response.json();
   gameState = payload.estado;
   renderLog(payload.registro);
+  renderFuzzyProcessing(payload.procesamiento_difuso);
 
   animatePlayerAction(payload.jugador?.accion);
   animateNpcMove(payload.npc?.movimiento);
@@ -315,6 +412,13 @@ elements.restartButton.addEventListener("click", () => {
     renderLog(["No fue posible reiniciar la partida."]);
     setBusy(false);
   });
+});
+
+// Toggle del panel de lógica difusa
+elements.toggleFuzzy.addEventListener("click", () => {
+  const isHidden = elements.fuzzyContent.style.display === "none";
+  elements.fuzzyContent.style.display = isHidden ? "block" : "none";
+  elements.toggleFuzzy.textContent = isHidden ? "−" : "+";
 });
 
 newGame().catch((error) => {

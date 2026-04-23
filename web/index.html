@@ -11,71 +11,92 @@
 
 <body>
   <main class="battle-screen">
-    <section class="battlefield">
-      <article class="status-card enemy-status">
-        <div class="status-header">
-          <h1>Bestia Difusa</h1>
-          <span class="status-level">Nv. 12</span>
+    <section>
+
+      <section class="battlefield">
+        <article class="status-card enemy-status">
+          <div class="status-header">
+            <h1>Bestia Difusa</h1>
+            <span class="status-level">Nv. 12</span>
+          </div>
+          <div class="hp-row">
+            <span class="hp-label">PS</span>
+            <div class="hp-bar">
+              <div id="npcHealthBar" class="hp-fill npc-fill"></div>
+            </div>
+          </div>
+          <div class="status-footer">
+            <span id="npcHealthText">100 / 100</span>
+            <span id="distanceText">Rango 50 u</span>
+          </div>
+        </article>
+
+        <div class="enemy-platform">
+          <img id="npcEffect" src="/assets/effect-hit.png" alt="" class="effect effect-enemy" />
+          <img id="npcSprite" src="/assets/npc-idle-1.png" alt="NPC pixel art" class="sprite sprite-npc" />
         </div>
-        <div class="hp-row">
-          <span class="hp-label">PS</span>
-          <div class="hp-bar">
-            <div id="npcHealthBar" class="hp-fill npc-fill"></div>
+
+        <div class="player-platform">
+          <img id="playerEffect" src="/assets/effect-guard.png" alt="" class="effect effect-player" />
+          <img id="playerSprite" src="/assets/player-idle-1.png" alt="Jugador pixel art" class="sprite sprite-player" />
+        </div>
+
+        <article class="status-card player-status">
+          <div class="status-header">
+            <h2>Nelson</h2>
+            <span id="battleStatus" class="status-level">Combate</span>
+          </div>
+          <div class="hp-row">
+            <span class="hp-label">PS</span>
+            <div class="hp-bar">
+              <div id="playerHealthBar" class="hp-fill player-fill"></div>
+            </div>
+          </div>
+          <div class="status-footer">
+            <span id="playerHealthText">100 / 100</span>
+            <span id="turnText">Turno 1</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="battle-ui">
+        <div class="battle-ui-left">
+          <div class="dialog-box">
+            <p class="dialog-caption">Bitácora de batalla</p>
+            <ul id="battleLog" class="dialog-log">
+              <li>Una Bestia Difusa aparece frente a ti.</li>
+            </ul>
+          </div>
+
+          <div class="command-box">
+            <p class="command-caption">¿Qué harás?</p>
+            <div class="command-grid">
+              <button class="action-button" data-action="atacar">Atacar</button>
+              <button class="action-button" data-action="defender">Defender</button>
+              <button class="action-button" data-action="acercarse">Acercarse</button>
+              <button class="action-button" data-action="alejarse">Alejarse</button>
+            </div>
+            <button id="restartButton" class="restart-button">Nueva partida</button>
           </div>
         </div>
-        <div class="status-footer">
-          <span id="npcHealthText">100 / 100</span>
-          <span id="distanceText">Rango 50 u</span>
-        </div>
-      </article>
 
-      <div class="enemy-platform">
-        <img id="npcEffect" src="/assets/effect-hit.png" alt="" class="effect effect-enemy" />
-        <img id="npcSprite" src="/assets/npc-idle-1.png" alt="NPC pixel art" class="sprite sprite-npc" />
-      </div>
+      </section>
 
-      <div class="player-platform">
-        <img id="playerEffect" src="/assets/effect-guard.png" alt="" class="effect effect-player" />
-        <img id="playerSprite" src="/assets/player-idle-1.png" alt="Jugador pixel art" class="sprite sprite-player" />
-      </div>
-
-      <article class="status-card player-status">
-        <div class="status-header">
-          <h2>Nelson</h2>
-          <span id="battleStatus" class="status-level">Combate</span>
-        </div>
-        <div class="hp-row">
-          <span class="hp-label">PS</span>
-          <div class="hp-bar">
-            <div id="playerHealthBar" class="hp-fill player-fill"></div>
-          </div>
-        </div>
-        <div class="status-footer">
-          <span id="playerHealthText">100 / 100</span>
-          <span id="turnText">Turno 1</span>
-        </div>
-      </article>
     </section>
 
-    <section class="battle-ui">
-      <div class="dialog-box">
-        <p class="dialog-caption">Bitácora de batalla</p>
-        <ul id="battleLog" class="dialog-log">
-          <li>Una Bestia Difusa aparece frente a ti.</li>
-        </ul>
-      </div>
 
-      <div class="command-box">
-        <p class="command-caption">¿Qué harás?</p>
-        <div class="command-grid">
-          <button class="action-button" data-action="atacar">Atacar</button>
-          <button class="action-button" data-action="defender">Defender</button>
-          <button class="action-button" data-action="acercarse">Acercarse</button>
-          <button class="action-button" data-action="alejarse">Alejarse</button>
-        </div>
-        <button id="restartButton" class="restart-button">Nueva partida</button>
+
+    <div class="fuzzy-panel">
+      <div class="fuzzy-header">
+        <h3>🧠 Lógica Difusa</h3>
+        <button id="toggleFuzzy" class="toggle-btn">−</button>
       </div>
-    </section>
+      <div id="fuzzyContent" class="fuzzy-content">
+        <div id="fuzzyLog" class="fuzzy-log">
+          <p class="fuzzy-placeholder">Los datos del procesamiento difuso aparecerán aquí...</p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="/app.js" defer></script>
