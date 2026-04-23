@@ -1,6 +1,18 @@
-#Importando la librería de lógica difusa Mamdani
+# Importando la librería de lógica difusa Mamdani
+from copy import deepcopy
+
 from mamdani import LinguisticVar, Mamdani, trap_left, triangle, trap_right
-#Definiendo las variables lingüísticas para el juego estratégico
+
+
+VIDA_MAXIMA = 100
+DISTANCIA_MIN = 0
+DISTANCIA_MAX = 100
+DISTANCIA_INICIAL = 50
+DANIO_JUGADOR = 12
+REDUCCION_DEFENSA = 8
+
+
+# Definiendo las variables lingüísticas para el juego estratégico
 # Entradas
 distancia = LinguisticVar("Distancia", [0, 100], "u")
 distancia.add_set("Cerca", trap_left(20, 40))
@@ -97,7 +109,50 @@ sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Med
 sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Alta")],
                  {ataque: "Muy_Bajo", movimiento: "Retroceder"})
 
-#Funciones auxiliares para interpretar los resultados de las salidas difusas en acciones concretas del juego    
+
+ACCIONES_JUGADOR = {
+    "1": "atacar",
+    "2": "defender",
+    "3": "acercarse",
+    "4": "alejarse",
+}
+
+ACCIONES_DISPONIBLES = {
+    "atacar": {"nombre": "Atacar", "descripcion": "Golpea si estás a rango medio o corto."},
+    "defender": {"nombre": "Defender", "descripcion": "Reduce parte del daño recibido este turno."},
+    "acercarse": {"nombre": "Acercarse", "descripcion": "Reduce la distancia para entrar en rango."},
+    "alejarse": {"nombre": "Alejarse", "descripcion": "Aumenta la distancia para forzar al NPC a moverse."},
+}
+
+
+def limitar(valor, minimo, maximo):
+    return max(minimo, min(maximo, valor))
+
+
+def crear_estado_inicial():
+    return {
+        "turno": 1,
+        "vida_jugador": VIDA_MAXIMA,
+        "vida_npc": VIDA_MAXIMA,
+        "distancia": DISTANCIA_INICIAL,
+        "terminado": False,
+        "ganador": None,
+    }
+
+
+def _normalizar_estado(estado):
+    base = crear_estado_inicial()
+    base.update(deepcopy(estado or {}))
+    base["turno"] = max(1, int(base["turno"]))
+    base["vida_jugador"] = limitar(int(base["vida_jugador"]), 0, VIDA_MAXIMA)
+    base["vida_npc"] = limitar(int(base["vida_npc"]), 0, VIDA_MAXIMA)
+    base["distancia"] = limitar(int(base["distancia"]), DISTANCIA_MIN, DISTANCIA_MAX)
+    base["terminado"] = bool(base["terminado"])
+    base["ganador"] = base["ganador"] if base["ganador"] in {"Jugador", "NPC"} else None
+    return base
+
+
+# Funciones auxiliares para interpretar los resultados de las salidas difusas en acciones concretas del juego
 def interpretar_ataque(valor):
     if valor <= 20:
         return "Huir", 0
@@ -119,6 +174,27 @@ def interpretar_movimiento(valor):
     else:
         return "Acercarse"
 
+
+def describir_ataque_npc(accion):
+    nombres = {
+        "Huir": "Retirada",
+        "Defender": "Guardia",
+        "Ataque_Normal": "Golpe",
+        "Ataque_Fuerte": "Impacto Fuerte",
+        "Ataque_Especial": "Pulso Especial",
+    }
+    return nombres.get(accion, accion)
+
+
+def describir_movimiento_npc(accion):
+    textos = {
+        "Retroceder": "Bestia Difusa retrocede y busca espacio.",
+        "Mantener": "Bestia Difusa mantiene la posición.",
+        "Acercarse": "Bestia Difusa se lanza hacia adelante.",
+    }
+    return textos.get(accion, "Bestia Difusa cambia de postura.")
+
+
 # Función del enemigo
 def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
     entradas = {
@@ -137,7 +213,139 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
 
     return accion_ataque, danio, accion_mov, valor_ataque, valor_mov
 
-# Función del jugador 
+
+def resolver_turno(estado, accion_jugador):
+    estado_actual = _normalizar_estado(estado)
+    accion = ACCIONES_JUGADOR.get(str(accion_jugador), accion_jugador)
+
+    if accion not in ACCIONES_DISPONIBLES:
+        raise ValueError("Acción no válida.")
+
+    if estado_actual["terminado"]:
+        return {
+            "estado": estado_actual,
+            "registro": ["La partida ya terminó. Reinicia para volver a jugar."],
+            "jugador": {},
+            "npc": {},
+        }
+
+    registro = [f"Turno {estado_actual['turno']}"]
+    defensa = False
+    jugador = {
+        "accion": accion,
+        "danio": 0,
+        "mensaje": "",
+    }
+
+    if accion == "atacar":
+        if estado_actual["distancia"] <= 60:
+            estado_actual["vida_npc"] = limitar(
+                estado_actual["vida_npc"] - DANIO_JUGADOR, 0, VIDA_MAXIMA
+            )
+            jugador["danio"] = DANIO_JUGADOR
+            jugador["mensaje"] = "Tu ataque impacta con fuerza."
+        else:
+            jugador["mensaje"] = "Tu ataque falla porque el rival está muy lejos."
+    elif accion == "defender":
+        defensa = True
+        jugador["mensaje"] = "Te preparas para resistir el próximo golpe."
+    elif accion == "acercarse":
+        estado_actual["distancia"] = limitar(
+            estado_actual["distancia"] - 15, DISTANCIA_MIN, DISTANCIA_MAX
+        )
+        jugador["mensaje"] = "Avanzas para cerrar la distancia."
+    elif accion == "alejarse":
+        estado_actual["distancia"] = limitar(
+            estado_actual["distancia"] + 15, DISTANCIA_MIN, DISTANCIA_MAX
+        )
+        jugador["mensaje"] = "Retrocedes para ganar espacio."
+
+    registro.append(jugador["mensaje"])
+
+    if estado_actual["vida_npc"] <= 0:
+        estado_actual["terminado"] = True
+        estado_actual["ganador"] = "Jugador"
+        registro.append("Bestia Difusa cae derrotada.")
+        return {
+            "estado": estado_actual,
+            "registro": registro,
+            "jugador": jugador,
+            "npc": {},
+        }
+
+    acc_atq, danio, acc_mov, val_atq, val_mov = turno_npc(
+        estado_actual["distancia"],
+        estado_actual["vida_npc"],
+        estado_actual["vida_jugador"],
+    )
+
+    npc = {
+        "accion_ataque": acc_atq,
+        "danio_base": danio,
+        "movimiento": acc_mov,
+        "valor_ataque": round(val_atq, 2),
+        "valor_movimiento": round(val_mov, 2),
+        "danio_aplicado": 0,
+        "defensa_activada": acc_atq == "Defender",
+        "ataque_conecto": False,
+    }
+
+    registro.append(f"Bestia Difusa usa {describir_ataque_npc(acc_atq)}.")
+    registro.append(describir_movimiento_npc(acc_mov))
+
+    if acc_mov == "Acercarse":
+        estado_actual["distancia"] = limitar(
+            estado_actual["distancia"] - 10, DISTANCIA_MIN, DISTANCIA_MAX
+        )
+    elif acc_mov == "Retroceder":
+        estado_actual["distancia"] = limitar(
+            estado_actual["distancia"] + 10, DISTANCIA_MIN, DISTANCIA_MAX
+        )
+
+    if acc_atq not in {"Huir", "Defender"}:
+        if estado_actual["distancia"] <= 70:
+            danio_real = danio
+            if defensa:
+                danio_real = max(0, danio_real - REDUCCION_DEFENSA)
+
+            npc["danio_aplicado"] = danio_real
+            npc["ataque_conecto"] = danio_real > 0
+            estado_actual["vida_jugador"] = limitar(
+                estado_actual["vida_jugador"] - danio_real, 0, VIDA_MAXIMA
+            )
+
+            if danio_real > 0:
+                if defensa:
+                    registro.append(
+                        f"Tu defensa amortigua el ataque, pero recibes {danio_real} de daño."
+                    )
+                else:
+                    registro.append(f"El impacto enemigo te causa {danio_real} de daño.")
+            else:
+                registro.append("Tu defensa neutraliza por completo el golpe enemigo.")
+        else:
+            registro.append("El ataque enemigo no alcanza la distancia necesaria.")
+    elif acc_atq == "Defender":
+        registro.append("Bestia Difusa se cubre y espera tu siguiente movimiento.")
+    else:
+        registro.append("Bestia Difusa rompe el intercambio y toma distancia.")
+
+    if estado_actual["vida_jugador"] <= 0:
+        estado_actual["terminado"] = True
+        estado_actual["ganador"] = "NPC"
+        registro.append("Tu equipo cae en combate.")
+    else:
+        estado_actual["turno"] += 1
+
+    return {
+        "estado": estado_actual,
+        "registro": registro,
+        "jugador": jugador,
+        "npc": npc,
+    }
+
+
+# Función del jugador
 def turno_jugador():
     print("\nAcciones del jugador:")
     print("1. Atacar")
@@ -146,69 +354,42 @@ def turno_jugador():
     print("4. Alejarse")
     return input("Elige: ")
 
+
 # Bucle principal del juego
 def jugar():
-    vida_j = 100
-    vida_e = 100
-    dist = 50
-    turno = 1
+    estado = crear_estado_inicial()
 
-    while vida_j > 0 and vida_e > 0:
-        print(f"\n--- TURNO {turno} ---")
-        print(f"Vida jugador: {vida_j}")
-        print(f"Vida NPC: {vida_e}")
-        print(f"Distancia: {dist}")
+    while not estado["terminado"]:
+        print(f"\n--- TURNO {estado['turno']} ---")
+        print(f"Vida jugador: {estado['vida_jugador']}")
+        print(f"Vida NPC: {estado['vida_npc']}")
+        print(f"Distancia: {estado['distancia']}")
 
         accion = turno_jugador()
-        defensa = False
+        try:
+            resultado = resolver_turno(estado, accion)
+        except ValueError:
+            print("Acción inválida. Usa 1, 2, 3 o 4.")
+            continue
 
-        if accion == "1":
-            if dist <= 60:
-                vida_e -= 12
-                print("Atacaste al NPC")
-            else:
-                print("Muy lejos")
-        elif accion == "2":
-            defensa = True
-            print("Defensa activada")
-        elif accion == "3":
-            dist = max(0, dist - 15)
-            print("Te acercas")
-        elif accion == "4":
-            dist = min(100, dist + 15)
-            print("Te alejas")
+        estado = resultado["estado"]
 
-        if vida_e <= 0:
-            break
+        print("\nResumen:")
+        for evento in resultado["registro"][1:]:
+            print("-", evento)
 
-        acc_atq, danio, acc_mov, val_atq, val_mov = turno_npc(dist, vida_e, vida_j)
+        npc = resultado["npc"]
+        if npc:
+            print(
+                f"Lectura difusa NPC -> ataque: {npc['valor_ataque']:.2f}, "
+                f"movimiento: {npc['valor_movimiento']:.2f}"
+            )
 
-        print("\nNPC:")
-        print("Ataque:", acc_atq, f"{val_atq:.2f}")
-        print("Movimiento:", acc_mov, f"{val_mov:.2f}")
-
-        if acc_mov == "Acercarse":
-            dist = max(0, dist - 10)
-        elif acc_mov == "Retroceder":
-            dist = min(100, dist + 10)
-
-        if acc_atq not in ["Huir", "Defender"]:
-            if dist <= 70:
-                if defensa:
-                    danio = max(0, danio - 8)
-                vida_j -= danio
-                print("NPC daño:", danio)
-        elif acc_atq == "Defender":
-            print("NPC se defiende")
-
-        vida_j = max(0, vida_j)
-        vida_e = max(0, vida_e)
-        turno += 1
-
-    if vida_j <= 0:
-        print("\nPerdiste")
-    else:
+    if estado["ganador"] == "Jugador":
         print("\nGanaste")
+    else:
+        print("\nPerdiste")
+
 
 # Ejecutar el juego
 if __name__ == "__main__":

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Fuzzy Battle</title>
+    <link rel="icon" href="/assets/hero.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="battle-screen">
+      <section class="battlefield">
+        <article class="status-card enemy-status">
+          <div class="status-header">
+            <h1>Bestia Difusa</h1>
+            <span class="status-level">Nv. 12</span>
+          </div>
+          <div class="hp-row">
+            <span class="hp-label">PS</span>
+            <div class="hp-bar">
+              <div id="npcHealthBar" class="hp-fill npc-fill"></div>
+            </div>
+          </div>
+          <div class="status-footer">
+            <span id="npcHealthText">100 / 100</span>
+            <span id="distanceText">Rango 50 u</span>
+          </div>
+        </article>
+
+        <div class="enemy-platform">
+          <div class="platform-shadow"></div>
+          <img id="npcSprite" src="/assets/npc.svg" alt="NPC pixel art" class="sprite sprite-npc" />
+        </div>
+
+        <div class="player-platform">
+          <div class="platform-shadow"></div>
+          <img id="playerSprite" src="/assets/hero.svg" alt="Jugador pixel art" class="sprite sprite-player" />
+        </div>
+
+        <article class="status-card player-status">
+          <div class="status-header">
+            <h2>Entrenador Pixel</h2>
+            <span id="battleStatus" class="status-level">Combate</span>
+          </div>
+          <div class="hp-row">
+            <span class="hp-label">PS</span>
+            <div class="hp-bar">
+              <div id="playerHealthBar" class="hp-fill player-fill"></div>
+            </div>
+          </div>
+          <div class="status-footer">
+            <span id="playerHealthText">100 / 100</span>
+            <span id="turnText">Turno 1</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="battle-ui">
+        <div class="dialog-box">
+          <p class="dialog-caption">Bitácora de batalla</p>
+          <ul id="battleLog" class="dialog-log">
+            <li>Una Bestia Difusa aparece frente a ti.</li>
+          </ul>
+        </div>
+
+        <div class="command-box">
+          <p class="command-caption">¿Qué harás?</p>
+          <div class="command-grid">
+            <button class="action-button" data-action="atacar">Atacar</button>
+            <button class="action-button" data-action="defender">Defender</button>
+            <button class="action-button" data-action="acercarse">Acercarse</button>
+            <button class="action-button" data-action="alejarse">Alejarse</button>
+          </div>
+          <button id="restartButton" class="restart-button">Nueva partida</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
