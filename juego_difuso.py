@@ -1,6 +1,3 @@
-# juego_difuso.py
-# Cerebro difuso del NPC
-
 import json 
 from copy import deepcopy
 from mamdani import VariableLinguistica, Mamdani, trapecio_izquierdo, triangulo, trapecio_derecho
@@ -11,10 +8,6 @@ DISTANCIA_MAX      = 100
 DISTANCIA_INICIAL  = 50
 DANIO_JUGADOR      = 12
 REDUCCION_DEFENSA  = 8
-
-# ─────────────────────────────────────────────
-# VARIABLES LINGÜÍSTICAS — ENTRADAS
-# ─────────────────────────────────────────────
 
 distancia = VariableLinguistica("Distancia", [0, 100], "u")
 distancia.agregar_conjunto("Cerca", trapecio_izquierdo(20, 45))          
@@ -31,9 +24,6 @@ vida_jugador.agregar_conjunto("Baja",  trapecio_izquierdo(20, 40))
 vida_jugador.agregar_conjunto("Media", triangulo(25, 50, 75))
 vida_jugador.agregar_conjunto("Alta",  trapecio_derecho(60, 80))
 
-# ─────────────────────────────────────────────
-# VARIABLE LINGÜÍSTICA — SALIDA
-# ─────────────────────────────────────────────
 accion = VariableLinguistica("Accion", [0, 100], "nivel")
 
 accion.agregar_conjunto("Alejarse",  trapecio_izquierdo(15, 30))
@@ -41,12 +31,8 @@ accion.agregar_conjunto("Defender",  triangulo(20, 35, 50))
 accion.agregar_conjunto("Acercarse", triangulo(40, 60, 80))
 accion.agregar_conjunto("Atacar",    trapecio_derecho(70, 85))
 
-# ─────────────────────────────────────────────
-# SISTEMA MAMDANI (27 Reglas Explícitas)
-# ─────────────────────────────────────────────
 sistema = Mamdani(salidas=[accion], resolucion=500)
 
-# ── Reglas: Distancia CERCA (9 reglas) ───────────────────
 sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
 sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
 sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
@@ -59,7 +45,6 @@ sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, 
 sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Atacar"})
 sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-# ── Reglas: Distancia MEDIA (9 reglas) ───────────────────
 sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
 sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
 sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
@@ -72,7 +57,6 @@ sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, 
 sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Defender"})
 sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-# ── Reglas: Distancia LEJOS (9 reglas) ───────────────────
 sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Acercarse"})
 sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Acercarse"})
 sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Acercarse"})
@@ -85,9 +69,6 @@ sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, 
 sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Alejarse"})
 sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Defender"})
 
-# ─────────────────────────────────────────────
-# CONSTANTES DE JUEGO
-# ─────────────────────────────────────────────
 
 ACCIONES_JUGADOR = {
     "1": "atacar",
@@ -103,16 +84,11 @@ ACCIONES_DISPONIBLES = {
     "alejarse":  {"nombre": "Alejarse",  "descripcion": "Aumenta la distancia para forzar al NPC a moverse."},
 }
 
-# ─────────────────────────────────────────────
-# UTILIDADES
-# ─────────────────────────────────────────────
 
 def limitar(valor, minimo, maximo):
-    # Asegura que el valor esté dentro del rango [minimo, maximo]
     return max(minimo, min(maximo, valor))
 
 def crear_estado_inicial():
-    # Inicializa un nuevo estado de juego con valores por defecto
     return {
         "turno":         1,
         "vida_jugador":  VIDA_MAXIMA,
@@ -123,7 +99,6 @@ def crear_estado_inicial():
     }
 
 def _normalizar_estado(estado):
-    # Valida y normaliza el estado garantizando que todos los valores estén dentro de rangos válidos
     base = crear_estado_inicial()
     base.update(deepcopy(estado or {}))
     base["turno"]        = max(1, int(base["turno"]))
@@ -134,17 +109,8 @@ def _normalizar_estado(estado):
     base["ganador"]      = base["ganador"] if base["ganador"] in {"Jugador", "NPC"} else None
     return base
 
-# ─────────────────────────────────────────────
-# INTERPRETACIÓN DE SALIDA DIFUSA
-# ─────────────────────────────────────────────
 
 def interpretar_accion(valor):
-    """
-    Umbrales agresivos basados en los cruces matemáticos:
-    Alejarse ∩ Defender ≈ 25
-    Defender ∩ Acercarse ≈ 45
-    Acercarse ∩ Atacar ≈ 75
-    """
     if valor < 25:
         return "Alejarse",  0
     elif valor < 45:
@@ -157,7 +123,6 @@ def interpretar_accion(valor):
         return "Atacar", danio
 
 def describir_accion_npc(accion_nombre):
-    # Retorna una descripción narrativa de la acción del NPC
     descripciones = {
         "Atacar":    "Bestia Difusa se lanza hacia ti con un ataque implacable.",
         "Defender":  "Bestia Difusa asume una postura defensiva firme.",
@@ -167,12 +132,7 @@ def describir_accion_npc(accion_nombre):
     return descripciones.get(accion_nombre, "Bestia Difusa cambia de postura.")
 
 
-# ─────────────────────────────────────────────
-# LÓGICA DE TURNO DEL NPC
-# ─────────────────────────────────────────────
-
 def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
-    # Ejecuta el razonamiento difuso del NPC y retorna la acción decidida
     entradas = {
         distancia:    distancia_val,
         vida_npc:     vida_npc_val,
@@ -196,20 +156,13 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
 
     return accion_npc, danio, valor_centroide
 
-# ─────────────────────────────────────────────
-# LÓGICA DE TURNO COMPLETO
-# ─────────────────────────────────────────────
-
 def resolver_turno(estado, accion_jugador):
-    # Procesa un turno completo: aplica acciones del jugador y NPC, actualiza estado
     estado_actual = _normalizar_estado(estado)
     accion_jug = ACCIONES_JUGADOR.get(str(accion_jugador), accion_jugador)
 
-    # Valida que la acción del jugador sea válida
     if accion_jug not in ACCIONES_DISPONIBLES:
         raise ValueError("Acción no válida.")
 
-    # Si el juego ya terminó, retorna estado sin cambios
     if estado_actual["terminado"]:
         return {
             "estado":   estado_actual,
@@ -218,12 +171,10 @@ def resolver_turno(estado, accion_jugador):
             "npc":      {},
         }
 
-    # Inicializa registro, variable de defensa e info del jugador
     registro = [f"Turno {estado_actual['turno']}"]
     defensa  = False
     jugador  = {"accion": accion_jug, "danio": 0, "mensaje": ""}
 
-    # ── Procesa la acción del jugador ────────────────────
     if accion_jug == "atacar":
         if estado_actual["distancia"] <= 60:
             estado_actual["vida_npc"] = limitar(
@@ -252,25 +203,21 @@ def resolver_turno(estado, accion_jugador):
 
     registro.append(jugador["mensaje"])
 
-    # Verifica si el NPC murió por el ataque del jugador
     if estado_actual["vida_npc"] <= 0:
         estado_actual["terminado"] = True
         estado_actual["ganador"]   = "Jugador"
         registro.append("¡La Bestia Difusa cae derrotada!")
         return {"estado": estado_actual, "registro": registro, "jugador": jugador, "npc": {}}
 
-    # ── Ejecuta el razonamiento difuso del NPC ─────────────────────────
     acc_npc, danio, val_accion = turno_npc(
         estado_actual["distancia"],
         estado_actual["vida_npc"],
         estado_actual["vida_jugador"],
     )
 
-    # Verifica si se alcanzaron los límites de distancia
     dist_min_alcanzada = estado_actual["distancia"] <= DISTANCIA_MIN + 5
     dist_max_alcanzada = estado_actual["distancia"] >= DISTANCIA_MAX - 5
 
-    # Ajusta la acción del NPC si alcanzó los límites de distancia
     if acc_npc == "Acercarse" and dist_min_alcanzada:
         acc_npc = "Atacar"
         danio   = int(12 + ((val_accion - 74) / 26.0) * 8)
@@ -286,20 +233,15 @@ def resolver_turno(estado, accion_jugador):
         "ataque_conecto": False,
     }
 
-    # Agrega la descripción narrativa de la acción del NPC
     registro.append(describir_accion_npc(acc_npc))
 
-    # ── Aplica el movimiento del NPC según su acción ────────────────────
     if acc_npc == "Acercarse":
         estado_actual["distancia"] = limitar(estado_actual["distancia"] - 10, DISTANCIA_MIN, DISTANCIA_MAX)
     elif acc_npc == "Alejarse":
         estado_actual["distancia"] = limitar(estado_actual["distancia"] + 10, DISTANCIA_MIN, DISTANCIA_MAX)
 
-    # ── Procesa el ataque del NPC si corresponde ────────────────────
     if acc_npc == "Atacar":
-        # Solo ataca si el rango es suficiente
         if estado_actual["distancia"] <= 70:
-            # Calcula daño considerando si el jugador está en defensa
             danio_real = max(0, danio - REDUCCION_DEFENSA) if defensa else danio
 
             npc["danio_aplicado"] = danio_real
@@ -318,13 +260,11 @@ def resolver_turno(estado, accion_jugador):
         else:
             registro.append("El ataque de la Bestia se queda corto en el aire.")
 
-    # Verifica si el jugador fue derrotado
     if estado_actual["vida_jugador"] <= 0:
         estado_actual["terminado"] = True
         estado_actual["ganador"]   = "NPC"
         registro.append("Tu barra de vida llega a cero...")
     else:
-        # Avanza al siguiente turno si el juego continúa
         estado_actual["turno"] += 1
 
     return {
@@ -334,12 +274,7 @@ def resolver_turno(estado, accion_jugador):
         "npc":      npc,
     }
 
-# ─────────────────────────────────────────────
-# BUCLE DE JUEGO (modo consola)
-# ─────────────────────────────────────────────
-
 def turno_jugador():
-    # Muestra el menú de acciones y captura la entrada del usuario
     print("\nAcciones del jugador:")
     print("  1. Atacar    (requiere dist <= 60)")
     print("  2. Defender  (absorbe 8 pt de daño)")
@@ -348,7 +283,6 @@ def turno_jugador():
     return input("Elige (1-4): ").strip()
 
 def jugar():
-    # Bucle principal del juego en modo consola
     estado = crear_estado_inicial()
     print("═" * 50)
     print("   COMBATE DIFUSO — MODO DEPREDADOR ACTIVO")
