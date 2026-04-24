@@ -3,7 +3,7 @@
 
 import json 
 from copy import deepcopy
-from mamdani import LinguisticVar, Mamdani, trap_left, triangle, trap_right
+from mamdani import VariableLinguistica, Mamdani, trapecio_izquierdo, triangulo, trapecio_derecho
 
 VIDA_MAXIMA        = 100
 DISTANCIA_MIN      = 0
@@ -16,81 +16,82 @@ REDUCCION_DEFENSA  = 8
 # VARIABLES LINGÜÍSTICAS — ENTRADAS
 # ─────────────────────────────────────────────
 
-distancia = LinguisticVar("Distancia", [0, 100], "u")
-distancia.add_set("Cerca", trap_left(20, 45))          
-distancia.add_set("Media", triangle(25, 50, 75))       
-distancia.add_set("Lejos", trap_right(55, 80))         
+distancia = VariableLinguistica("Distancia", [0, 100], "u")
+distancia.agregar_conjunto("Cerca", trapecio_izquierdo(20, 45))          
+distancia.agregar_conjunto("Media", triangulo(25, 50, 75))       
+distancia.agregar_conjunto("Lejos", trapecio_derecho(55, 80))        
 
-vida_npc = LinguisticVar("Vida_NPC", [0, 100], "%")
-vida_npc.add_set("Baja",  trap_left(20, 40))
-vida_npc.add_set("Media", triangle(25, 50, 75))
-vida_npc.add_set("Alta",  trap_right(60, 80))
+vida_npc = VariableLinguistica("Vida_NPC", [0, 100], "%")
+vida_npc.agregar_conjunto("Baja",  trapecio_izquierdo(20, 40))
+vida_npc.agregar_conjunto("Media", triangulo(25, 50, 75))
+vida_npc.agregar_conjunto("Alta",  trapecio_derecho(60, 80))
 
-vida_jugador = LinguisticVar("Vida_Jugador", [0, 100], "%")
-vida_jugador.add_set("Baja",  trap_left(20, 40))
-vida_jugador.add_set("Media", triangle(25, 50, 75))
-vida_jugador.add_set("Alta",  trap_right(60, 80))
+vida_jugador = VariableLinguistica("Vida_Jugador", [0, 100], "%")
+vida_jugador.agregar_conjunto("Baja",  trapecio_izquierdo(20, 40))
+vida_jugador.agregar_conjunto("Media", triangulo(25, 50, 75))
+vida_jugador.agregar_conjunto("Alta",  trapecio_derecho(60, 80))
 
 # ─────────────────────────────────────────────
 # VARIABLE LINGÜÍSTICA — SALIDA (Mentalidad de Tiburón Real)
 # ─────────────────────────────────────────────
-accion = LinguisticVar("Accion", [0, 100], "nivel")
+accion = VariableLinguistica("Accion", [0, 100], "nivel")
 
 # Alejarse: Cae rapidísimo. Solo ocupa del 0 al 30.
-accion.add_set("Alejarse",  trap_left(15, 30))
+accion.agregar_conjunto("Alejarse",  trapecio_izquierdo(15, 30))
 
 # Defender: Muy estrecho (20 a 50). Solo cae aquí si está 100% seguro de defender.
-accion.add_set("Defender",  triangle(20, 35, 50))
+accion.agregar_conjunto("Defender",  triangulo(20, 35, 50))
 
 # Acercarse: Gigantesco (40 a 80). Se traga todo el centro de indecisión.
-accion.add_set("Acercarse", triangle(40, 60, 80))
+accion.agregar_conjunto("Acercarse", triangulo(40, 60, 80))
 
 # Atacar: Empieza desde el 70. Ocupa todo el tercio final.
-accion.add_set("Atacar",    trap_right(70, 85))
+accion.agregar_conjunto("Atacar",    trapecio_derecho(70, 85))
 
 # ─────────────────────────────────────────────
 # SISTEMA MAMDANI (27 Reglas Explícitas)
 # ─────────────────────────────────────────────
-sistema = Mamdani(outputs=[accion], resolution=500)
+# Nota: La librería actualizada usa 'salidas' en lugar de 'outputs'
+sistema = Mamdani(salidas=[accion], resolucion=500)
 
 # ── Reglas: Distancia CERCA (9 reglas) ───────────────────
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Defender"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Defender"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Cerca"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
 # ── Reglas: Distancia MEDIA (9 reglas) ───────────────────
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Atacar"}) 
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Atacar"})
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Atacar"}) 
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Alejarse"})
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Defender"})
-sistema.add_rule([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Alejarse"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Defender"})
+sistema.agregar_regla([(distancia, "Media"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Atacar"})
 
 # ── Reglas: Distancia LEJOS (9 reglas) ───────────────────
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Acercarse"})
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Acercarse"})
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Acercarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Alta")], {accion: "Acercarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Media")], {accion: "Acercarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Alta"), (vida_jugador, "Baja")], {accion: "Acercarse"})
 
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Acercarse"}) 
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Acercarse"})
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Acercarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Alta")], {accion: "Acercarse"}) 
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Media")], {accion: "Acercarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Media"), (vida_jugador, "Baja")], {accion: "Acercarse"})
 
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Alejarse"})
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Alejarse"})
-sistema.add_rule([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Defender"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Alta")], {accion: "Alejarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Media")], {accion: "Alejarse"})
+sistema.agregar_regla([(distancia, "Lejos"), (vida_npc, "Baja"), (vida_jugador, "Baja")], {accion: "Defender"})
 
 # ─────────────────────────────────────────────
 # CONSTANTES DE JUEGO
@@ -109,7 +110,6 @@ ACCIONES_DISPONIBLES = {
     "acercarse": {"nombre": "Acercarse", "descripcion": "Reduce la distancia para entrar en rango."},
     "alejarse":  {"nombre": "Alejarse",  "descripcion": "Aumenta la distancia para forzar al NPC a moverse."},
 }
-
 
 # ─────────────────────────────────────────────
 # UTILIDADES
@@ -138,7 +138,6 @@ def _normalizar_estado(estado):
     base["terminado"]    = bool(base["terminado"])
     base["ganador"]      = base["ganador"] if base["ganador"] in {"Jugador", "NPC"} else None
     return base
-
 
 # ─────────────────────────────────────────────
 # INTERPRETACIÓN DE SALIDA DIFUSA
@@ -182,8 +181,9 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
         vida_npc:     vida_npc_val,
         vida_jugador: vida_jugador_val,
     }
-    salidas = sistema.compute(entradas)
-    valor_centroide = salidas[accion]
+    # Ahora usamos .calcular() en lugar de .compute()
+    salidas_difusas = sistema.calcular(entradas)
+    valor_centroide = salidas_difusas[accion]
     accion_npc, danio = interpretar_accion(valor_centroide)
     
     try:
