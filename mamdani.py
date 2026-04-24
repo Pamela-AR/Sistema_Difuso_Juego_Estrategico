@@ -87,7 +87,7 @@ def _evaluar_clausula(clausula, membresias):
     mu = membresias[var][conj]
     return 1.0 - mu if negado else mu
 
-def _fuerza_activacion(antecedentes, op, membresias):
+def _activacion_regla(antecedentes, op, membresias):
     """
     antecedentes : lista de cláusulas  [ (var, conj) | (var, conj, "NOT") ]
     op           : "AND" → min  |  "OR" → max
@@ -128,13 +128,13 @@ class Mamdani:
 
     # ── Razonamiento ──────────────────────────
 
-    def _inferir_salida(self, var_salida, membresias):
+    def _razonar_reglas(self, var_salida, membresias):
         """Agrega alfas (máximo) de todas las reglas relevantes a var_salida."""
         agregados = {nombre: 0.0 for nombre in var_salida.conjuntos}
         for regla in self.reglas:
             if var_salida not in regla["cons"]:
                 continue
-            alpha = _fuerza_activacion(regla["ant"], regla["op"], membresias)
+            alpha = _activacion_regla(regla["ant"], regla["op"], membresias)
             conj  = regla["cons"][var_salida]
             agregados[conj] = max(agregados[conj], alpha)
         return agregados
@@ -173,7 +173,7 @@ class Mamdani:
 
         resultados = {}
         for var_salida in self.salidas:
-            agregados = self._inferir_salida(var_salida, membresias)
+            agregados = self._razonar_reglas(var_salida, membresias)
 
             if verboso:
                 print(f"\n[2] RAZONAMIENTO → {var_salida.nombre}")
