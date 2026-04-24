@@ -1,52 +1,52 @@
 {
   "fuzzificacion": {
     "Distancia": {
-      "valor": 0,
+      "valor": 50,
       "unidad": "u",
       "conjuntos": {
-        "Cerca": 1.0,
-        "Media": 0.0,
+        "Cerca": 0.0,
+        "Media": 1.0,
         "Lejos": 0.0
       }
     },
     "Vida_NPC": {
-      "valor": 16,
+      "valor": 100,
       "unidad": "%",
       "conjuntos": {
-        "Baja": 1.0,
+        "Baja": 0.0,
         "Media": 0.0,
-        "Alta": 0.0
+        "Alta": 1.0
       }
     },
     "Vida_Jugador": {
-      "valor": 15,
+      "valor": 100,
       "unidad": "%",
       "conjuntos": {
-        "Baja": 1.0,
+        "Baja": 0.0,
         "Media": 0.0,
-        "Alta": 0.0
+        "Alta": 1.0
       }
     }
   },
   "reglas_activadas": [
     {
-      "indice": 8,
+      "indice": 9,
       "antecedentes": [
         {
           "variable": "Distancia",
-          "conjunto": "Cerca",
+          "conjunto": "Media",
           "negado": false,
           "valor_membresia": 1.0
         },
         {
           "variable": "Vida_NPC",
-          "conjunto": "Baja",
+          "conjunto": "Alta",
           "negado": false,
           "valor_membresia": 1.0
         },
         {
           "variable": "Vida_Jugador",
-          "conjunto": "Baja",
+          "conjunto": "Alta",
           "negado": false,
           "valor_membresia": 1.0
         }
@@ -54,7 +54,7 @@
       "operador": "AND",
       "firing_strength": 1.0,
       "consecuentes": {
-        "Accion": "Atacar"
+        "Accion": "Acercarse"
       }
     }
   ],
@@ -63,12 +63,12 @@
       "conjuntos": {
         "Alejarse": 0.0,
         "Defender": 0.0,
-        "Acercarse": 0.0,
-        "Atacar": 1.0
+        "Acercarse": 1.0,
+        "Atacar": 0.0
       }
     }
   },
   "valor_salida": {
-    "Accion": 84.013
+    "Accion": 55.0
   }
 }

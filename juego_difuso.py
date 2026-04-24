@@ -20,7 +20,7 @@ DANIO_JUGADOR     = 12
 REDUCCION_DEFENSA = 8
 
 DANIO_JUGADOR_MINIMO = 8   # daño a distancia máxima (40)
-DANIO_JUGADOR_MAXIMO = 18  # daño pegado (distancia 0)
+DANIO_JUGADOR_MAXIMO = 20  # daño pegado (distancia 0)
 
 DISTANCIA_MIN_JUGADOR = 40;
 DISTANCIA_MIN_NPC = 60;
@@ -32,9 +32,9 @@ SALTO_DISTANCIA   = 15;
 # ─────────────────────────────────────────────
 
 distancia = LinguisticVar("Distancia", [0, 100], "u")
-distancia.add_set("Cerca", trap_left(20, 45))       # 1 hasta 20, baja a 0 en 45
+distancia.add_set("Cerca", trap_left(17, 33))       # 1 hasta 20, baja a 0 en 45
 distancia.add_set("Media", triangle(25, 50, 75))    # pico en 50
-distancia.add_set("Lejos", trap_right(55, 80))      # sube desde 55, plano a partir de 80
+distancia.add_set("Lejos", trap_right(67, 83))      # sube desde 55, plano a partir de 80
 
 vida_npc = LinguisticVar("Vida_NPC", [0, 100], "%")
 vida_npc.add_set("Baja",  trap_left(20, 40))

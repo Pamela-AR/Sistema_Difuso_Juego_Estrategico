@@ -82,7 +82,7 @@ class LinguisticVar:
 # ─────────────────────────────────────────────
 
 def _eval_clause(clause, memberships):
-    """Evalúa una cláusula y devuelve su grado de membresía."""
+    """Evalúa una regla y devuelve su grado de membresía."""
     var, conj = clause[0], clause[1]
     negated   = len(clause) == 3 and clause[2] == "NOT"
     mu = memberships[var][conj]
