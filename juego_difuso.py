@@ -1,6 +1,7 @@
 # juego_difuso.py
 # Cerebro difuso del NPC — VERSIÓN AGRESIVA (Mentalidad de Tiburón)
 
+import json 
 from copy import deepcopy
 from mamdani import LinguisticVar, Mamdani, trap_left, triangle, trap_right
 
@@ -31,9 +32,6 @@ vida_jugador.add_set("Media", triangle(25, 50, 75))
 vida_jugador.add_set("Alta",  trap_right(60, 80))
 
 # ─────────────────────────────────────────────
-# VARIABLE LINGÜÍSTICA — SALIDA
-# ─────────────────────────────────────────────
-# ─────────────────────────────────────────────
 # VARIABLE LINGÜÍSTICA — SALIDA (Mentalidad de Tiburón Real)
 # ─────────────────────────────────────────────
 accion = LinguisticVar("Accion", [0, 100], "nivel")
@@ -49,9 +47,6 @@ accion.add_set("Acercarse", triangle(40, 60, 80))
 
 # Atacar: Empieza desde el 70. Ocupa todo el tercio final.
 accion.add_set("Atacar",    trap_right(70, 85))
-# ─────────────────────────────────────────────
-# SISTEMA MAMDANI (Reglas Agresivas)
-# ─────────────────────────────────────────────
 
 # ─────────────────────────────────────────────
 # SISTEMA MAMDANI (27 Reglas Explícitas)
@@ -151,7 +146,7 @@ def _normalizar_estado(estado):
 
 def interpretar_accion(valor):
     """
-    Nuevos umbrales agresivos basados en los cruces matemáticos:
+    Umbrales agresivos basados en los cruces matemáticos:
     Alejarse ∩ Defender ≈ 25
     Defender ∩ Acercarse ≈ 45
     Acercarse ∩ Atacar ≈ 75
@@ -163,7 +158,6 @@ def interpretar_accion(valor):
     elif valor < 75:
         return "Acercarse", 0
     else:
-        # El daño ahora escala en el rango superior (75 a 100)
         intensidad = min(1.0, (valor - 75) / 25.0)
         danio = int(8 + intensidad * 8)
         return "Atacar", danio
@@ -172,7 +166,6 @@ def describir_accion_npc(accion_nombre):
     descripciones = {
         "Atacar":    "Bestia Difusa se lanza hacia ti con un ataque implacable.",
         "Defender":  "Bestia Difusa asume una postura defensiva firme.",
-        "Mantener":  "Bestia Difusa te analiza sin ceder terreno.",
         "Acercarse": "Bestia Difusa recorta la distancia rápidamente.",
         "Alejarse":  "Bestia Difusa retrocede buscando refugio.",
     }
@@ -182,10 +175,6 @@ def describir_accion_npc(accion_nombre):
 # ─────────────────────────────────────────────
 # LÓGICA DE TURNO DEL NPC
 # ─────────────────────────────────────────────
-
-# Dentro de juego_difuso.py
-
-import json # <--- Asegúrate de poner esto al inicio del archivo
 
 def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
     entradas = {
@@ -197,7 +186,6 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
     valor_centroide = salidas[accion]
     accion_npc, danio = interpretar_accion(valor_centroide)
     
-    # === INYECCIÓN DE TU CÓDIGO AQUÍ ===
     try:
         with open("estado_difuso.json", "w") as f:
             json.dump({
@@ -208,8 +196,7 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
                 "accion_nombre": accion_npc
             }, f)
     except:
-        pass # Si el visualizador está leyendo el archivo en este microsegundo, lo ignoramos y seguimos
-    # ===================================
+        pass
 
     return accion_npc, danio, valor_centroide
 
@@ -281,10 +268,14 @@ def resolver_turno(estado, accion_jugador):
     dist_min_alcanzada = estado_actual["distancia"] <= DISTANCIA_MIN + 5
     dist_max_alcanzada = estado_actual["distancia"] >= DISTANCIA_MAX - 5
 
-    if (acc_npc == "Acercarse" and dist_min_alcanzada) or \
-       (acc_npc == "Alejarse"  and dist_max_alcanzada):
-        acc_npc = "Atacar" if dist_min_alcanzada else "Mantener" # Si está pegado, no se queda quieto, muerde.
-        danio   = int(12 + ((val_accion - 74) / 26.0) * 8) if acc_npc == "Atacar" else 0
+    # Si el NPC quiere acercarse pero ya está al límite mínimo → Atacar
+    # Si el NPC quiere alejarse pero ya está al límite máximo → Defender
+    if acc_npc == "Acercarse" and dist_min_alcanzada:
+        acc_npc = "Atacar"
+        danio   = int(12 + ((val_accion - 74) / 26.0) * 8)
+    elif acc_npc == "Alejarse" and dist_max_alcanzada:
+        acc_npc = "Defender"
+        danio   = 0
 
     npc = {
         "accion":         acc_npc,
