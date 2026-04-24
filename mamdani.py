@@ -167,7 +167,7 @@ class Mamdani:
         membresias = {var: var.fusificar(val) for var, val in entradas.items()}
 
         if verboso:
-            print("[1] FUSIFICACIÓN")
+            print(f"\n{'-'*50}\n[1] FUSIFICACIÓN")
             for var, mu in membresias.items():
                 print(f"  {var.nombre:20s} → { {k: round(v,3) for k,v in mu.items()} }")
 
@@ -186,5 +186,6 @@ class Mamdani:
 
             if verboso:
                 print(f"[3] DEFUSIFICACIÓN → {round(valor_nitido,3)} {var_salida.unidad}")
+                print(f"{'-'*50}")
 
         return resultados

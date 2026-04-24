@@ -182,7 +182,7 @@ def turno_npc(distancia_val, vida_npc_val, vida_jugador_val):
         vida_jugador: vida_jugador_val,
     }
     # Ahora usamos .calcular() en lugar de .compute()
-    salidas_difusas = sistema.calcular(entradas)
+    salidas_difusas = sistema.calcular(entradas, verboso=True)
     valor_centroide = salidas_difusas[accion]
     accion_npc, danio = interpretar_accion(valor_centroide)
     
